@@ -585,33 +585,53 @@ async function conectarBT(){
     if(btDevice.gatt.connected){btDevice.gatt.disconnect();await new Promise(r=>setTimeout(r,400));}
     if(el)el.textContent='Conectando...';
     const server=await btDevice.gatt.connect();
-    if(el)el.textContent='Activando sensor...';
     const service=await server.getPrimaryService('0000fe95-0000-1000-8000-00805f9b34fb');
 
-    // Escribir 0xA01F en la característica de cambio de modo para activar lectura en tiempo real
-    // UUID de la característica mode-change del Flower Care
-    const modeChar=await service.getCharacteristic('00001a00-0000-1000-8000-00805f9b34fb');
-    await modeChar.writeValue(new Uint8Array([0xA0,0x1F]));
-    await new Promise(r=>setTimeout(r,500));
+    // Listar TODAS las características disponibles
+    const chars=await service.getCharacteristics();
+    const uuids=chars.map(c=>c.uuid);
+    console.log('Características disponibles:',uuids);
 
-    if(el)el.textContent='Leyendo datos...';
-    // Leer 16 bytes de la característica de datos en tiempo real
-    const dataChar=await service.getCharacteristic('00001a01-0000-1000-8000-00805f9b34fb');
-    const raw=await dataChar.readValue();
-    // Desconectar para liberar el sensor
+    // Intentar escribir en la primera característica con propiedad 'write'
+    let initDone=false;
+    for(const c of chars){
+      if(c.properties.write||c.properties.writeWithoutResponse){
+        try{
+          await c.writeValue(new Uint8Array([0xA0,0x1F]));
+          console.log('Init escrito en:',c.uuid);
+          initDone=true;
+          await new Promise(r=>setTimeout(r,500));
+          break;
+        }catch(e){console.log('Write falló en',c.uuid,e.message);}
+      }
+    }
+
+    // Leer la característica con más bytes (la de datos reales)
+    let bestData=null;
+    let bestLen=0;
+    for(const c of chars){
+      if(c.properties.read){
+        try{
+          const val=await c.readValue();
+          console.log('Leído de',c.uuid,':',Array.from(new Uint8Array(val.buffer)));
+          if(val.byteLength>bestLen){bestLen=val.byteLength;bestData=val;}
+        }catch(e){console.log('Read falló en',c.uuid);}
+      }
+    }
+
     try{btDevice.gatt.disconnect();}catch(e){}
 
-    // Decodificar 16 bytes según protocolo MiFlora/HHCCJCY01:
-    // bytes 0-1: temperatura (little-endian, dividir entre 10)
-    // bytes 3-5: luz (little-endian, 3 bytes)
-    // byte 6:    humedad
-    // bytes 7-8: conductividad EC (little-endian)
-    const b=new Uint8Array(raw.buffer);
-    console.log('FlowerCare bytes:',Array.from(b));
+    if(!bestData||bestLen<7){
+      toast('⚠️ Datos insuficientes ('+bestLen+' bytes). Revisa consola.');
+      btData=null;rMeds();return;
+    }
+
+    const b=new Uint8Array(bestData.buffer);
+    console.log('Mejor lectura ('+b.length+' bytes):',Array.from(b));
     const tmp=((b[1]<<8)|b[0])/10;
-    const luz=(b[5]<<16)|(b[4]<<8)|b[3];
-    const hum=b[6];
-    const ec=(b[8]<<8)|b[7];
+    const luz=b.length>=6?(b[5]<<16)|(b[4]<<8)|b[3]:0;
+    const hum=b.length>=7?b[6]:0;
+    const ec=b.length>=9?(b[8]<<8)|b[7]:0;
 
     btData={ec:ec.toFixed(0),hum:hum.toFixed(0),tmp:tmp.toFixed(1),luz:luz.toFixed(0)};
     toast('✓ Datos leídos correctamente');
