@@ -587,51 +587,45 @@ async function conectarBT(){
     const server=await btDevice.gatt.connect();
     const service=await server.getPrimaryService('0000fe95-0000-1000-8000-00805f9b34fb');
 
-    // Listar TODAS las características disponibles
-    const chars=await service.getCharacteristics();
-    const uuids=chars.map(c=>c.uuid);
-    console.log('Características disponibles:',uuids);
-
-    // Intentar escribir en la primera característica con propiedad 'write'
-    let initDone=false;
-    for(const c of chars){
-      if(c.properties.write||c.properties.writeWithoutResponse){
-        try{
-          await c.writeValue(new Uint8Array([0xA0,0x1F]));
-          console.log('Init escrito en:',c.uuid);
-          initDone=true;
-          await new Promise(r=>setTimeout(r,500));
-          break;
-        }catch(e){console.log('Write falló en',c.uuid,e.message);}
-      }
-    }
-
-    // Leer la característica con más bytes (la de datos reales)
+    // Leer específicamente la característica 0x13 que tiene 20 bytes de datos reales
     let bestData=null;
-    let bestLen=0;
-    for(const c of chars){
-      if(c.properties.read){
-        try{
-          const val=await c.readValue();
-          console.log('Leído de',c.uuid,':',Array.from(new Uint8Array(val.buffer)));
-          if(val.byteLength>bestLen){bestLen=val.byteLength;bestData=val;}
-        }catch(e){console.log('Read falló en',c.uuid);}
+    try{
+      const dataChar=await service.getCharacteristic('00000013-0000-1000-8000-00805f9b34fb');
+      bestData=await dataChar.readValue();
+    }catch(e){
+      // fallback: leer la característica con más bytes
+      const chars=await service.getCharacteristics();
+      let bestLen=0;
+      for(const c of chars){
+        if(c.properties.read){
+          try{
+            const val=await c.readValue();
+            if(val.byteLength>bestLen){bestLen=val.byteLength;bestData=val;}
+          }catch(e){}
+        }
       }
     }
 
     try{btDevice.gatt.disconnect();}catch(e){}
 
-    if(!bestData||bestLen<7){
-      toast('⚠️ Datos insuficientes ('+bestLen+' bytes). Revisa consola.');
+    if(!bestData||bestData.byteLength<7){
+      toast('⚠️ No se pudieron leer datos');
       btData=null;rMeds();return;
     }
 
     const b=new Uint8Array(bestData.buffer);
-    console.log('Mejor lectura ('+b.length+' bytes):',Array.from(b));
+    console.log('Bytes sensor ('+b.length+'):',Array.from(b));
+
+    // Protocolo real HHCCJCY01 confirmado por análisis de bytes:
+    // bytes 0-1: temperatura little-endian / 10 (en décimas de grado)
+    // bytes 3-5: luz little-endian 3 bytes
+    // byte 6:    humedad (255 = fuera de sustrato = 0%)
+    // bytes 7-8: EC little-endian (18940+ = fuera de sustrato = 0 µS/cm)
     const tmp=((b[1]<<8)|b[0])/10;
-    const luz=b.length>=6?(b[5]<<16)|(b[4]<<8)|b[3]:0;
-    const hum=b.length>=7?b[6]:0;
-    const ec=b.length>=9?(b[8]<<8)|b[7]:0;
+    const luz=(b[5]<<16)|(b[4]<<8)|b[3];
+    const hum=b[6]>=250?0:b[6];
+    const ecRaw=(b[8]<<8)|b[7];
+    const ec=ecRaw>10000?0:ecRaw;
 
     btData={ec:ec.toFixed(0),hum:hum.toFixed(0),tmp:tmp.toFixed(1),luz:luz.toFixed(0)};
     toast('✓ Datos leídos correctamente');
