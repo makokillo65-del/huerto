@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mi Huerto Urbano</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root{--vd:#1a2e1a;--vm:#2d5a27;--vc:#4a8c3f;--vs:#7ab648;--vme:#b8d4a8;--cre:#f5f0e8;--tie:#8b6914;--tiec:#c4993a;--roj:#c0392b;--az:#2980b9;--fon:#f0ebe0;--rad:14px;--som:0 2px 12px rgba(26,46,26,0.10);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Lato',sans-serif;background:var(--fon);color:var(--vd);min-height:100vh;}
+.shell{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:var(--vd);color:var(--cre);padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.header h1{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;}
+.header .sub{font-size:0.68rem;color:var(--vme);letter-spacing:1px;text-transform:uppercase;}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--vd);display:flex;z-index:100;border-top:2px solid var(--vm);}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 4px 7px;background:none;border:none;color:var(--vme);font-size:0.6rem;cursor:pointer;font-family:'Lato',sans-serif;text-transform:uppercase;letter-spacing:0.5px;gap:2px;transition:color 0.2s;}
+.nav button .ico{font-size:1.3rem;}
+.nav button.active{color:var(--vs);}
+.main{flex:1;padding:16px 14px 88px;overflow-y:auto;}
+.page{display:none;}
+.page.active{display:block;}
+.sec-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--vd);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--vme);}
+.card{background:#fff;border-radius:var(--rad);box-shadow:var(--som);padding:14px;margin-bottom:12px;border-left:4px solid var(--vc);}
+.card-title{font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;margin-bottom:8px;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.stat{background:#fff;border-radius:var(--rad);padding:14px 10px;text-align:center;box-shadow:var(--som);}
+.stat .val{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--vm);}
+.stat .lbl{font-size:0.68rem;color:#777;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pcard{background:#fff;border-radius:var(--rad);box-shadow:var(--som);padding:14px 12px;cursor:pointer;border-top:4px solid var(--vc);transition:transform 0.15s;}
+.pcard:hover{transform:translateY(-2px);}
+.pcard .pico{font-size:2rem;margin-bottom:6px;}
+.pcard .pn{font-family:'Playfair Display',serif;font-size:0.92rem;font-weight:600;line-height:1.2;}
+.pcard .psp{font-size:0.7rem;color:#888;font-style:italic;margin-top:3px;}
+.pcard .pc{font-size:0.68rem;color:var(--tie);font-weight:700;margin-top:5px;text-transform:uppercase;}
+.btn{padding:10px 18px;border-radius:10px;border:none;font-family:'Lato',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;transition:background 0.2s,transform 0.1s;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{transform:scale(0.97);}
+.btn-p{background:var(--vm);color:#fff;}
+.btn-p:hover{background:var(--vc);}
+.btn-s{background:transparent;color:var(--vm);border:2px solid var(--vm);}
+.btn-s:hover{background:var(--vm);color:#fff;}
+.btn-d{background:transparent;color:var(--roj);border:2px solid var(--roj);font-size:0.78rem;padding:6px 12px;}
+.btn-bl{background:var(--tie);color:#fff;}
+.btn-full{width:100%;justify-content:center;}
+.btn-sm{padding:7px 13px;font-size:0.8rem;}
+.fg{margin-bottom:13px;}
+.fg label{display:block;font-size:0.75rem;font-weight:700;color:var(--vd);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.7px;}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 11px;border:2px solid var(--vme);border-radius:9px;font-family:'Lato',sans-serif;font-size:0.9rem;background:var(--cre);color:var(--vd);outline:none;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--vc);}
+.fg textarea{resize:vertical;min-height:68px;}
+.row2{display:flex;gap:10px;}
+.row2 .fg{flex:1;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(10,20,10,0.65);z-index:200;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--fon);border-radius:20px 20px 0 0;padding:22px 16px 30px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;animation:su 0.25s ease;}
+@keyframes su{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.mhdr h2{font-family:'Playfair Display',serif;font-size:1.1rem;}
+.bx{background:var(--vme);border:none;border-radius:50%;width:30px;height:30px;font-size:1rem;cursor:pointer;color:var(--vd);}
+.dhdr{background:var(--vd);color:var(--cre);border-radius:var(--rad);padding:16px;margin-bottom:14px;display:flex;gap:12px;align-items:center;}
+.dico{font-size:2.8rem;}
+.dn{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;}
+.dsp{font-size:0.8rem;font-style:italic;color:var(--vme);}
+.dme{font-size:0.75rem;color:#aaa;margin-top:3px;}
+.dtabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;}
+.dtab{flex-shrink:0;padding:7px 13px;border-radius:20px;border:2px solid var(--vme);background:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;color:var(--vd);font-family:'Lato',sans-serif;transition:all 0.2s;}
+.dtab.active{background:var(--vm);color:#fff;border-color:var(--vm);}
+.log{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;border-left:3px solid var(--vs);box-shadow:0 1px 5px rgba(0,0,0,0.06);}
+.log.riego{border-left-color:var(--az);}
+.log.trat{border-left-color:var(--roj);}
+.log.med{border-left-color:var(--tiec);}
+.log.obs{border-left-color:#9b59b6;}
+.log.cos{border-left-color:var(--vs);}
+.log .ld{font-size:0.7rem;color:#888;font-weight:700;margin-bottom:3px;}
+.log .lm{font-size:0.86rem;font-weight:700;}
+.log .ll{font-size:0.78rem;color:#555;margin-top:2px;}
+.aviso{background:#fff;border-radius:var(--rad);padding:13px;margin-bottom:10px;box-shadow:var(--som);display:flex;align-items:center;gap:11px;}
+.avico{font-size:1.7rem;flex-shrink:0;}
+.avn{font-weight:700;font-size:0.9rem;}
+.avm{font-size:0.76rem;color:#666;margin-top:2px;}
+.avp{font-size:0.73rem;font-weight:700;color:var(--tie);margin-top:3px;}
+.avu{color:var(--roj)!important;}
+.btp{background:var(--vd);color:var(--cre);border-radius:var(--rad);padding:16px;margin-bottom:14px;}
+.btst{font-size:0.78rem;color:var(--vme);margin-bottom:11px;}
+.btg{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.btr{background:rgba(255,255,255,0.08);border-radius:10px;padding:11px 9px;text-align:center;}
+.btr .bv{font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;color:var(--vs);}
+.btr .bu{font-size:0.68rem;color:var(--vme);}
+.btr .bl{font-size:0.68rem;color:#aaa;margin-top:2px;text-transform:uppercase;}
+.libc{background:#fff;border-radius:var(--rad);padding:13px;margin-bottom:10px;box-shadow:var(--som);border-left:4px solid var(--tiec);}
+.libn{font-family:'Playfair Display',serif;font-size:0.92rem;font-weight:600;}
+.libd{font-size:0.78rem;color:#555;margin-top:4px;}
+.accb{width:100%;background:none;border:none;text-align:left;font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:600;color:var(--vd);cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:3px 0;}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.7rem;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;}
+.bgv{background:var(--vme);color:var(--vd);}
+.bgg{background:#eee;color:#555;}
+.isel{display:flex;flex-wrap:wrap;gap:6px;}
+.isel span{font-size:1.5rem;cursor:pointer;padding:5px;border-radius:8px;transition:background 0.15s;}
+.isel span.sel{background:var(--vme);}
+.fab{position:fixed;bottom:78px;right:calc(50% - 228px);background:var(--vc);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:1.5rem;box-shadow:0 4px 14px rgba(74,140,63,0.45);cursor:pointer;z-index:99;display:none;align-items:center;justify-content:center;}
+.fab:hover{background:var(--vm);}
+.toast{display:none;position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:var(--vd);color:var(--cre);padding:9px 20px;border-radius:25px;font-size:0.83rem;font-weight:700;z-index:300;white-space:nowrap;}
+.toast.show{display:block;animation:fio 2.5s forwards;}
+@keyframes fio{0%{opacity:0;transform:translateX(-50%) translateY(10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}75%{opacity:1}100%{opacity:0}}
+.empty{text-align:center;padding:36px 20px;color:#aaa;}
+.empty .ei{font-size:2.8rem;margin-bottom:8px;}
+.empty p{font-size:0.88rem;}
+.kv{margin-bottom:10px;}
+.kv .k{font-size:0.7rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;}
+.kv .v{font-size:0.88rem;}
+.tabrw{display:flex;gap:8px;margin-bottom:14px;}
+.foto-portada{width:100%;height:160px;object-fit:cover;border-radius:var(--rad);margin-bottom:12px;display:block;}
+.foto-ph{width:100%;height:90px;border-radius:var(--rad);border:2px dashed var(--vme);display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.82rem;cursor:pointer;margin-bottom:12px;gap:7px;background:#fff;}
+.galeria{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.gfoto{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;}
+.gfoto img{width:100%;height:100%;object-fit:cover;display:block;}
+.gfecha{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:0.65rem;padding:4px 7px;font-weight:700;}
+.gdel{position:absolute;top:4px;right:4px;background:rgba(192,57,43,0.85);border:none;border-radius:50%;width:22px;height:22px;color:#fff;font-size:0.7rem;cursor:pointer;}
+.upbtn{display:inline-flex;align-items:center;gap:7px;background:var(--vm);color:#fff;border:none;border-radius:10px;padding:9px 15px;font-family:'Lato',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;margin-bottom:10px;}
+.upprog{height:4px;background:var(--vme);border-radius:2px;margin-bottom:8px;overflow:hidden;display:none;}
+.upprog .bar{height:100%;background:var(--vm);width:0%;transition:width 0.3s;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="header">
+    <div><h1>Mi Huerto Urbano</h1><div class="sub">Cuaderno de campo digital</div></div>
+    <span style="font-size:1.8rem">🌿</span>
+  </header>
+  <main class="main">
+    <div id="pg-dashboard" class="page active"></div>
+    <div id="pg-plantas" class="page"></div>
+    <div id="pg-avisos" class="page"></div>
+    <div id="pg-mediciones" class="page"></div>
+    <div id="pg-biblioteca" class="page"></div>
+  </main>
+  <nav class="nav">
+    <button class="active" onclick="goTab('dashboard')"><span class="ico">🏡</span>Inicio</button>
+    <button onclick="goTab('plantas')"><span class="ico">🌱</span>Plantas</button>
+    <button onclick="goTab('avisos')"><span class="ico">🔔</span>Avisos</button>
+    <button onclick="goTab('mediciones')"><span class="ico">📊</span>Medic.</button>
+    <button onclick="goTab('biblioteca')"><span class="ico">📚</span>Biblioteca</button>
+  </nav>
+</div>
+<button class="fab" id="fab">＋</button>
+<div class="toast" id="toast"></div>
+
+<!-- MODALES -->
+<div class="overlay" id="ov-planta">
+  <div class="modal">
+    <div class="mhdr"><h2>🌱 Nueva planta</h2><button class="bx" onclick="closeModal('ov-planta')">✕</button></div>
+    <div class="fg"><label>Icono</label><div class="isel" id="ico-sel"></div></div>
+    <div class="fg"><label>Nombre / Ubicación *</label><input id="p-nombre" placeholder="Ej: Torre tomates balcón"></div>
+    <div class="fg"><label>Especie / Variedad</label><input id="p-especie" placeholder="Ej: Solanum lycopersicum 'Red Robin'"></div>
+    <div class="fg"><label>Contenedor</label>
+      <select id="p-cont"><option>Torre aeropónica</option><option>Maceta</option><option>Contenedor textil</option><option>Cubo</option></select>
+    </div>
+    <div class="fg"><label>Composición del sustrato</label><textarea id="p-sustrato" placeholder="Ej: 60% coco, 30% perlita, 10% vermicompost"></textarea></div>
+    <div class="fg"><label>Fecha de plantación</label><input type="date" id="p-fecha"></div>
+    <div class="fg"><label>Notas</label><textarea id="p-notas"></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarPlanta()">✓ Guardar planta</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-riego">
+  <div class="modal">
+    <div class="mhdr"><h2>💧 Nuevo riego</h2><button class="bx" onclick="closeModal('ov-riego')">✕</button></div>
+    <div class="fg"><label>Fecha y hora</label><input type="datetime-local" id="r-fecha"></div>
+    <div class="fg"><label>Volumen (litros)</label><input type="number" step="0.1" id="r-vol" placeholder="0.5"></div>
+    <div class="fg"><label>Solución nutritiva</label><select id="r-sol"></select></div>
+    <div class="fg"><label>Añadidos extra</label><input id="r-extra" placeholder="Ej: +1ml/L melaza"></div>
+    <div class="row2">
+      <div class="fg"><label>EC (mS/cm)</label><input type="number" step="0.1" id="r-ec"></div>
+      <div class="fg"><label>pH</label><input type="number" step="0.1" id="r-ph"></div>
+    </div>
+    <div class="fg"><label>Notas</label><textarea id="r-notas"></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarRiego()">✓ Guardar</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-trat">
+  <div class="modal">
+    <div class="mhdr"><h2>🧪 Nuevo tratamiento</h2><button class="bx" onclick="closeModal('ov-trat')">✕</button></div>
+    <div class="fg"><label>Fecha y hora</label><input type="datetime-local" id="t-fecha"></div>
+    <div class="fg"><label>Producto</label><input id="t-prod" placeholder="Ej: Bacillus subtilis"></div>
+    <div class="row2">
+      <div class="fg"><label>Dosis</label><input id="t-dosis" placeholder="2 ml/L"></div>
+      <div class="fg"><label>Método</label>
+        <select id="t-met"><option>Pulverización foliar</option><option>Riego</option><option>Drench</option><option>Inyección al sustrato</option></select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Motivo</label>
+        <select id="t-mot"><option>Preventivo</option><option>Plaga detectada</option><option>Enfermedad</option><option>Deficiencia</option><option>Estimulación</option></select>
+      </div>
+      <div class="fg"><label>Plaga / Objetivo</label><input id="t-plaga" placeholder="Tuta absoluta"></div>
+    </div>
+    <div class="fg"><label>Notas</label><textarea id="t-notas"></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarTrat()">✓ Guardar</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-med">
+  <div class="modal">
+    <div class="mhdr"><h2>📊 Nueva medición</h2><button class="bx" onclick="closeModal('ov-med')">✕</button></div>
+    <div class="fg"><label>Fecha y hora</label><input type="datetime-local" id="m-fecha"></div>
+    <div class="row2">
+      <div class="fg"><label>EC (mS/cm)</label><input type="number" step="0.01" id="m-ec"></div>
+      <div class="fg"><label>Humedad (%)</label><input type="number" id="m-hum"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Temperatura (°C)</label><input type="number" step="0.1" id="m-temp"></div>
+      <div class="fg"><label>Luz (lux)</label><input type="number" id="m-luz"></div>
+    </div>
+    <div class="fg"><label>Notas</label><textarea id="m-notas"></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarMed()">✓ Guardar</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-obs">
+  <div class="modal">
+    <div class="mhdr"><h2>📝 Nueva observación</h2><button class="bx" onclick="closeModal('ov-obs')">✕</button></div>
+    <div class="fg"><label>Fecha y hora</label><input type="datetime-local" id="o-fecha"></div>
+    <div class="fg"><label>Observación</label><textarea id="o-texto" placeholder="Describe lo que observas..."></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarObs()">✓ Guardar</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-cos">
+  <div class="modal">
+    <div class="mhdr"><h2>🧺 Nueva cosecha</h2><button class="bx" onclick="closeModal('ov-cos')">✕</button></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="c-fecha"></div>
+    <div class="row2">
+      <div class="fg"><label>Cantidad</label><input type="number" step="0.01" id="c-cant"></div>
+      <div class="fg"><label>Unidad</label>
+        <select id="c-uni"><option>kg</option><option>g</option><option>unidades</option><option>racimos</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>Calidad</label><div id="stars-sel" style="font-size:1.8rem;margin-top:4px;cursor:pointer"></div><input type="hidden" id="c-cal" value="3"></div>
+    <div class="fg"><label>Notas</label><textarea id="c-notas"></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarCos()">✓ Guardar</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-aviso">
+  <div class="modal">
+    <div class="mhdr"><h2>🔔 Nuevo aviso</h2><button class="bx" onclick="closeModal('ov-aviso')">✕</button></div>
+    <div class="fg"><label>Nombre *</label><input id="av-nom" placeholder="Ej: Aplicar Bacillus subtilis"></div>
+    <div class="fg"><label>Tipo</label>
+      <select id="av-tipo"><option>Fitosanitario</option><option>Fertilización</option><option>Biológico</option><option>Riego</option><option>Otro</option></select>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Cada (días)</label><input type="number" id="av-freq" value="7" min="1"></div>
+      <div class="fg"><label>Fecha inicio</label><input type="date" id="av-inicio"></div>
+    </div>
+    <div class="fg"><label>Notas (producto, dosis...)</label><textarea id="av-notas"></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarAviso()">✓ Guardar aviso</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-sol">
+  <div class="modal">
+    <div class="mhdr"><h2>💊 Nueva fórmula</h2><button class="bx" onclick="closeModal('ov-sol')">✕</button></div>
+    <div class="fg"><label>Nombre *</label><input id="s-nom" placeholder="Ej: Solución A Crecimiento"></div>
+    <div class="fg"><label>Fase del cultivo</label>
+      <select id="s-fase"><option>Germinación</option><option selected>Crecimiento</option><option>Floración</option><option>Fructificación</option><option>Mantenimiento</option></select>
+    </div>
+    <div class="fg"><label>Componentes y dosis</label><textarea id="s-comp" placeholder="Parte A: 2 ml/L&#10;Parte B: 1.5 ml/L&#10;Parte C: 0 ml/L"></textarea></div>
+    <div class="row2">
+      <div class="fg"><label>EC objetivo (mS/cm)</label><input type="number" step="0.1" id="s-ec"></div>
+      <div class="fg"><label>pH objetivo</label><input type="number" step="0.1" id="s-ph"></div>
+    </div>
+    <div class="fg"><label>Notas</label><textarea id="s-notas"></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarSol()">✓ Guardar fórmula</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-medg">
+  <div class="modal">
+    <div class="mhdr"><h2>📊 Medición manual</h2><button class="bx" onclick="closeModal('ov-medg')">✕</button></div>
+    <div class="fg"><label>Planta</label><select id="mg-planta"></select></div>
+    <div class="fg"><label>Fecha y hora</label><input type="datetime-local" id="mg-fecha"></div>
+    <div class="row2">
+      <div class="fg"><label>EC (mS/cm)</label><input type="number" step="0.01" id="mg-ec"></div>
+      <div class="fg"><label>Humedad (%)</label><input type="number" id="mg-hum"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Temperatura (°C)</label><input type="number" step="0.1" id="mg-temp"></div>
+      <div class="fg"><label>Luz (lux)</label><input type="number" id="mg-luz"></div>
+    </div>
+    <div class="fg"><label>Notas</label><textarea id="mg-notas"></textarea></div>
+    <button class="btn btn-p btn-full" onclick="guardarMedG()">✓ Guardar</button>
+  </div>
+</div>
+
+<script>
+const DB={
+  load(k,d=[]){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}},
+  save(k,v){localStorage.setItem(k,JSON.stringify(v));}
+};
+let plantas=DB.load('hu_p');
+let riegos=DB.load('hu_r');
+let tratos=DB.load('hu_t');
+let meds=DB.load('hu_m');
+let obs=DB.load('hu_o');
+let cosechas=DB.load('hu_c');
+let sols=DB.load('hu_s');
+let avisos=DB.load('hu_a');
+const saveAll=()=>{DB.save('hu_p',plantas);DB.save('hu_r',riegos);DB.save('hu_t',tratos);DB.save('hu_m',meds);DB.save('hu_o',obs);DB.save('hu_c',cosechas);DB.save('hu_s',sols);DB.save('hu_a',avisos);};
+
+let tab='dashboard',plantaId=null,detTab='riegos',selIco='🌱',selStars=3,btData=null,bibTab='soluciones',cultiIdx=null;
+const ICOS=['🌱','🍅','🍓','🌶️','🥬','🌿','🫑','🥦','🌸','🌾','🧅','🫛'];
+const CULTIVOS=[
+  {n:'Tomate',sp:'Solanum lycopersicum',ec:'2.0–3.5 mS/cm',hum:'60–80%',tmp:'18–27°C',pl:'Tuta absoluta, mosca blanca, trips',nt:'Necesita soporte. Polinización manual en interior.'},
+  {n:'Fresa',sp:'Fragaria × ananassa',ec:'1.0–2.0 mS/cm',hum:'60–75%',tmp:'15–22°C',pl:'Araña roja, trips, botrytis',nt:'Sensible a exceso de sales. EC baja en floración.'},
+  {n:'Pimiento',sp:'Capsicum annuum',ec:'1.5–3.0 mS/cm',hum:'60–75%',tmp:'20–28°C',pl:'Mosca blanca, araña roja',nt:'Tolera bien el calor. Riego regular sin encharcamiento.'},
+  {n:'Pitaya',sp:'Hylocereus undatus',ec:'0.8–1.8 mS/cm',hum:'40–60%',tmp:'18–30°C',pl:'Cochinilla, fusarium',nt:'Sustrato muy drenante. Riegos espaciados.'},
+  {n:'Habas',sp:'Vicia faba',ec:'1.0–2.0 mS/cm',hum:'60–70%',tmp:'10–18°C',pl:'Pulgón negro, sitona',nt:'Cultivo de temporada fría. Fija nitrógeno.'},
+  {n:'Cebollino',sp:'Allium schoenoprasum',ec:'1.0–2.5 mS/cm',hum:'55–70%',tmp:'15–25°C',pl:'Trips, mildiu',nt:'Cosecha continua cortando a 3–4 cm del sustrato.'},
+];
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+function fdt(d){const dt=new Date(d);return dt.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});}
+function fdth(d){const dt=new Date(d);return dt.toLocaleDateString('es-ES',{day:'2-digit',month:'short'})+' '+dt.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});}
+function diasHasta(s){const h=new Date();h.setHours(0,0,0,0);const d=new Date(s);d.setHours(0,0,0,0);return Math.round((d-h)/86400000);}
+function st(n){return '★'.repeat(n)+'☆'.repeat(5-n);}
+function nowDTL(){return new Date().toISOString().slice(0,16);}
+function hoy(){return new Date().toISOString().slice(0,10);}
+
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show';setTimeout(()=>el.className='toast',2600);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');}));
+
+function fab(show,fn){const f=document.getElementById('fab');f.style.display=show?'flex':'none';if(fn)f.onclick=fn;}
+
+function goTab(t){
+  tab=t;plantaId=null;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-'+t).classList.add('active');
+  document.querySelectorAll('.nav button').forEach((b,i)=>b.classList.toggle('active',['dashboard','plantas','avisos','mediciones','biblioteca'][i]===t));
+  render();
+}
+
+function render(){
+  if(tab==='dashboard')rDash();
+  else if(tab==='plantas')rPlantas();
+  else if(tab==='avisos')rAvisos();
+  else if(tab==='mediciones')rMeds();
+  else if(tab==='biblioteca')rBib();
+}
+
+// ── DASHBOARD ──
+function rDash(){
+  const aHoy=avisos.filter(a=>{const p=calcProx(a);if(!p)return false;const d=diasHasta(p);return d<=1&&d>=0;});
+  const ur=riegos.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha))[0];
+  let h=`<div class="sec-title">🏡 Resumen del huerto</div>
+  <div class="stats">
+    <div class="stat"><div class="val">${plantas.length}</div><div class="lbl">Plantas</div></div>
+    <div class="stat"><div class="val">${aHoy.length}</div><div class="lbl">Avisos hoy</div></div>
+    <div class="stat"><div class="val">${cosechas.length}</div><div class="lbl">Cosechas</div></div>
+  </div>`;
+  if(aHoy.length){
+    h+=`<div class="card" style="border-left-color:var(--roj)"><div class="card-title">🔔 Avisos pendientes</div>`;
+    aHoy.forEach(a=>h+=`<div style="padding:5px 0;border-bottom:1px solid #eee"><strong>${a.nombre}</strong><div style="font-size:0.76rem;color:#777">${a.tipo} · cada ${a.frecuencia} días</div></div>`);
+    h+=`</div>`;
+  }
+  if(ur){const np=plantas.find(p=>p.id===ur.plantaId);h+=`<div class="card" style="border-left-color:var(--az)"><div class="card-title">💧 Último riego</div><strong>${np?np.nombre:'—'}</strong><div style="font-size:0.78rem;color:#666">${fdth(ur.fecha)} · ${ur.volumen||'—'} L</div></div>`;}
+  if(!plantas.length){h+=`<div class="empty"><div class="ei">🌱</div><p>Aún no tienes plantas.<br>Ve a <strong>Plantas</strong> para añadir la primera.</p></div>`;}
+  else plantas.slice(0,4).forEach(p=>{
+    const r=riegos.filter(x=>x.plantaId===p.id).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha))[0];
+    h+=`<div class="card"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.8rem">${p.ico}</span><div style="flex:1"><div style="font-weight:700;font-family:'Playfair Display',serif">${p.nombre}</div><div style="font-size:0.76rem;color:#777;font-style:italic">${p.esp||''}</div></div><span class="badge bgv">${(p.cont||'').split(' ')[0]}</span></div>${r?`<div style="font-size:0.73rem;color:#aaa;margin-top:6px">💧 Último riego: ${fdt(r.fecha)}</div>`:''}</div>`;
+  });
+  document.getElementById('pg-dashboard').innerHTML=h;
+  fab(false);
+}
+
+// ── PLANTAS ──
+function rPlantas(){
+  const pg=document.getElementById('pg-plantas');
+  if(plantaId){rDetalle(pg);return;}
+  let h=`<div class="sec-title">🌱 Mis plantas</div>`;
+  if(!plantas.length)h+=`<div class="empty"><div class="ei">🪴</div><p>Sin plantas todavía.<br>Pulsa + para añadir.</p></div>`;
+  else{h+=`<div class="pgrid">`;plantas.forEach(p=>{h+=`<div class="pcard" onclick="abrirP('${p.id}')"><div class="pico">${p.ico}</div><div class="pn">${p.nombre}</div><div class="psp">${p.esp||''}</div><div class="pc">${p.cont||''}</div></div>`;});h+=`</div>`;}
+  pg.innerHTML=h;
+  fab(true,()=>{abrirModalPlanta();});
+}
+
+function abrirP(id){plantaId=id;detTab='riegos';rPlantas();}
+
+function rDetalle(pg){
+  const p=plantas.find(x=>x.id===plantaId);
+  if(!p){plantaId=null;rPlantas();return;}
+  const tabs=[{id:'riegos',l:'💧 Riegos'},{id:'trats',l:'🧪 Trat.'},{id:'meds',l:'📊 Meds.'},{id:'obs',l:'📝 Notas'},{id:'cos',l:'🧺 Cosecha'},{id:'fotos',l:'📷 Fotos'},{id:'ficha',l:'🪴 Ficha'}];
+  const portada=p.portada?`<img src="${p.portada}" class="foto-portada" style="cursor:pointer" onclick="abrirFotoGrande('${p.portada}')">`:`<div class="foto-ph" onclick="subirPortada()">📷 Añadir foto de portada</div>`;
+  let h=`<button class="btn btn-s btn-sm" style="margin-bottom:14px" onclick="volverL()">← Volver</button>
+  ${portada}
+  <div class="dhdr"><div class="dico">${p.ico}</div><div><div class="dn">${p.nombre}</div><div class="dsp">${p.esp||''}</div><div class="dme">${p.cont||''} · Plantado ${fdt(p.fecha)}</div></div></div>
+  <div class="dtabs">`;
+  tabs.forEach(t=>h+=`<button class="dtab ${detTab===t.id?'active':''}" onclick="chgDet('${t.id}')">${t.l}</button>`);
+  h+=`</div><div id="det"></div>`;
+  pg.innerHTML=h;
+  fab(false);
+  rDetC();
+}
+
+function volverL(){plantaId=null;rPlantas();}
+function chgDet(t){detTab=t;rDetC();}
+
+function rDetC(){
+  const el=document.getElementById('det');if(!el)return;
+  if(detTab==='riegos')el.innerHTML=rRiegos();
+  else if(detTab==='trats')el.innerHTML=rTrats();
+  else if(detTab==='meds')el.innerHTML=rMedsP();
+  else if(detTab==='obs')el.innerHTML=rObs();
+  else if(detTab==='cos')el.innerHTML=rCos();
+  else if(detTab==='fotos')el.innerHTML=rFotos();
+  else if(detTab==='ficha')el.innerHTML=rFicha();
+}
+
+function rFotos(){
+  const p=plantas.find(x=>x.id===plantaId);
+  const album=p.album||[];
+  let h=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    <button class="upbtn" onclick="subirFotoAlbum('camara')">📷 Cámara</button>
+    <button class="upbtn" style="background:var(--tie)" onclick="subirFotoAlbum('galeria')">🖼️ Galería</button>
+  </div>
+  <div class="upprog" id="upprog"><div class="bar" id="uppbar"></div></div>`;
+  if(!album.length){h+=`<div class="empty"><div class="ei">📷</div><p>Sin fotos todavía.<br>Añade la primera con los botones de arriba.</p></div>`;return h;}
+  h+=`<div class="galeria">`;
+  album.forEach((f,i)=>{
+    h+=`<div class="gfoto"><img src="${f.url}" onclick="abrirFotoGrande('${f.url}')"><div class="gfecha">${fdt(f.fecha)}</div><button class="gdel" onclick="elimFoto(${i})">✕</button></div>`;
+  });
+  h+=`</div>`;
+  return h;
+}
+
+function rRiegos(){
+  const r=riegos.filter(x=>x.plantaId===plantaId).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  let h=`<button class="btn btn-p btn-sm" style="margin-bottom:12px" onclick="abrirMR()">+ Registrar riego</button>`;
+  if(!r.length)return h+`<div class="empty"><div class="ei">💧</div><p>Sin riegos registrados</p></div>`;
+  r.forEach(x=>{h+=`<div class="log riego"><div class="ld">${fdth(x.fecha)}</div><div class="lm">💧 ${x.vol||'—'} L — ${x.sol||'Agua'}</div>${(x.ec||x.ph)?`<div class="ll">EC: ${x.ec||'—'} mS/cm · pH: ${x.ph||'—'}</div>`:''}${x.ext?`<div class="ll">${x.ext}</div>`:''}${x.nt?`<div class="ll" style="font-style:italic">${x.nt}</div>`:''}</div>`;});
+  return h;
+}
+function rTrats(){
+  const t=tratos.filter(x=>x.plantaId===plantaId).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  let h=`<button class="btn btn-p btn-sm" style="margin-bottom:12px" onclick="abrirMT()">+ Registrar tratamiento</button>`;
+  if(!t.length)return h+`<div class="empty"><div class="ei">🧪</div><p>Sin tratamientos</p></div>`;
+  t.forEach(x=>{h+=`<div class="log trat"><div class="ld">${fdth(x.fecha)}</div><div class="lm">🧪 ${x.prod}</div><div class="ll">${x.dos} · ${x.met}</div><div class="ll">Motivo: ${x.mot}${x.plg?' · '+x.plg:''}</div>${x.nt?`<div class="ll" style="font-style:italic">${x.nt}</div>`:''}</div>`;});
+  return h;
+}
+function rMedsP(){
+  const m=meds.filter(x=>x.plantaId===plantaId).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  let h=`<button class="btn btn-p btn-sm" style="margin-bottom:12px" onclick="abrirMM()">+ Registrar medición</button>`;
+  if(!m.length)return h+`<div class="empty"><div class="ei">📊</div><p>Sin mediciones</p></div>`;
+  m.forEach(x=>{h+=`<div class="log med"><div class="ld">${fdth(x.fecha)}</div><div class="lm">${x.ec?'⚡'+x.ec+' mS/cm ':''} ${x.hum?'💧'+x.hum+'% ':''}</div><div class="ll">${x.tmp?'🌡️'+x.tmp+'°C ':''} ${x.luz?'☀️'+x.luz+' lux':''}</div>${x.nt?`<div class="ll" style="font-style:italic">${x.nt}</div>`:''}</div>`;});
+  return h;
+}
+function rObs(){
+  const o=obs.filter(x=>x.plantaId===plantaId).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  let h=`<button class="btn btn-p btn-sm" style="margin-bottom:12px" onclick="abrirMO()">+ Añadir observación</button>`;
+  if(!o.length)return h+`<div class="empty"><div class="ei">📝</div><p>Sin observaciones</p></div>`;
+  o.forEach(x=>{h+=`<div class="log obs"><div class="ld">${fdth(x.fecha)}</div><div class="lm">${x.txt}</div></div>`;});
+  return h;
+}
+function rCos(){
+  const c=cosechas.filter(x=>x.plantaId===plantaId).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  const tot=c.reduce((a,x)=>a+(parseFloat(x.cant)||0),0);
+  let h=`<button class="btn btn-p btn-sm" style="margin-bottom:12px" onclick="abrirMC()">+ Registrar cosecha</button>`;
+  if(c.length)h+=`<div style="background:var(--vme);border-radius:10px;padding:9px 13px;margin-bottom:11px;font-size:0.85rem;font-weight:700;color:var(--vd)">🧺 Total: ${tot.toFixed(2)} acumulado</div>`;
+  if(!c.length)return h+`<div class="empty"><div class="ei">🧺</div><p>Sin cosechas</p></div>`;
+  c.forEach(x=>{h+=`<div class="log cos"><div class="ld">${fdt(x.fecha)}</div><div class="lm">🧺 ${x.cant} ${x.uni}</div><div class="ll" style="color:var(--tiec)">${st(parseInt(x.cal)||3)}</div>${x.nt?`<div class="ll" style="font-style:italic">${x.nt}</div>`:''}</div>`;});
+  return h;
+}
+function rFicha(){
+  const p=plantas.find(x=>x.id===plantaId);
+  return `<div class="card"><div class="card-title">🪴 Datos de la planta</div>
+  <div class="kv"><div class="k">Nombre / Ubicación</div><div class="v">${p.nombre}</div></div>
+  <div class="kv"><div class="k">Especie / Variedad</div><div class="v">${p.esp||'—'}</div></div>
+  <div class="kv"><div class="k">Contenedor</div><div class="v">${p.cont}</div></div>
+  <div class="kv"><div class="k">Fecha plantación</div><div class="v">${fdt(p.fecha)}</div></div>
+  ${p.sus?`<div class="kv"><div class="k">Sustrato</div><div class="v">${p.sus}</div></div>`:''}
+  ${p.nt?`<div class="kv"><div class="k">Notas</div><div class="v" style="font-style:italic">${p.nt}</div></div>`:''}
+  </div><button class="btn btn-d" onclick="elimP('${p.id}')">🗑 Eliminar esta planta</button>`;
+}
+
+// ── AVISOS ──
+function calcProx(a){
+  if(!a.inicio||!a.freq)return null;
+  const h=new Date();h.setHours(0,0,0,0);
+  const fr=parseInt(a.freq);let p=new Date(a.inicio);
+  while(p<h)p.setDate(p.getDate()+fr);
+  return p.toISOString().slice(0,10);
+}
+function rAvisos(){
+  const icoT={Fitosanitario:'🧪',Fertilización:'💊',Biológico:'🦠',Riego:'💧',Otro:'📋'};
+  const sorted=[...avisos].map(a=>({...a,prox:calcProx(a)})).sort((a,b)=>new Date(a.prox)-new Date(b.prox));
+  let h=`<div class="sec-title">🔔 Avisos periódicos</div>`;
+  if(!sorted.length)h+=`<div class="empty"><div class="ei">🔔</div><p>Sin avisos configurados</p></div>`;
+  sorted.forEach(a=>{
+    const d=a.prox?diasHasta(a.prox):null;
+    let pt='';
+    if(d===0)pt=`<div class="avp avu">⚠️ Toca HOY</div>`;
+    else if(d===1)pt=`<div class="avp avu">⚠️ Toca MAÑANA</div>`;
+    else if(d!==null)pt=`<div class="avp">Próxima: ${fdt(a.prox)} (${d} días)</div>`;
+    h+=`<div class="aviso"><div class="avico">${icoT[a.tipo]||'📋'}</div><div style="flex:1"><div class="avn">${a.nombre}</div><div class="avm"><span class="badge bgg">${a.tipo}</span> · cada ${a.freq} días</div>${a.nt?`<div class="avm" style="font-style:italic">${a.nt}</div>`:''}${pt}</div><button class="btn btn-d" onclick="elimA('${a.id}')">✕</button></div>`;
+  });
+  document.getElementById('pg-avisos').innerHTML=h;
+  fab(true,()=>{document.getElementById('av-nom').value='';document.getElementById('av-freq').value='7';document.getElementById('av-inicio').value=hoy();document.getElementById('av-notas').value='';openModal('ov-aviso');});
+}
+function elimA(id){avisos=avisos.filter(a=>a.id!==id);saveAll();toast('Aviso eliminado');rAvisos();}
+function guardarAviso(){
+  const n=document.getElementById('av-nom').value.trim();
+  if(!n){toast('⚠️ El nombre es obligatorio');return;}
+  avisos.push({id:uid(),nombre:n,tipo:document.getElementById('av-tipo').value,freq:document.getElementById('av-freq').value,inicio:document.getElementById('av-inicio').value,nt:document.getElementById('av-notas').value});
+  saveAll();closeModal('ov-aviso');toast('Aviso creado ✓');rAvisos();
+}
+
+// ── MEDICIONES GLOBAL ──
+function rMeds(){
+  const ul=[...meds].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,20);
+
+  let bth='';
+  if(btData){
+    bth=`<div style="background:#fff;border-radius:var(--rad);box-shadow:var(--som);padding:16px;margin-bottom:14px;border:3px solid var(--vm)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--vd)">🌿 Flower Care</div>
+        <span style="background:#e8f5e2;color:var(--vm);font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:20px;border:2px solid var(--vm)">● CONECTADO</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:#e8f5e2;border-radius:12px;padding:14px 12px;text-align:center;border:2px solid var(--vme)">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--vm);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">⚡ EC</div>
+          <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--vd);line-height:1">${btData.ec}</div>
+          <div style="font-size:0.8rem;color:#555;margin-top:2px">mS/cm</div>
+        </div>
+        <div style="background:#e3f0fb;border-radius:12px;padding:14px 12px;text-align:center;border:2px solid #a8d4f0">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--az);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">💧 HUMEDAD</div>
+          <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--vd);line-height:1">${btData.hum}</div>
+          <div style="font-size:0.8rem;color:#555;margin-top:2px">%</div>
+        </div>
+        <div style="background:#fff8e8;border-radius:12px;padding:14px 12px;text-align:center;border:2px solid #f0dfa0">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--tie);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">🌡️ TEMPERATURA</div>
+          <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--vd);line-height:1">${btData.tmp}</div>
+          <div style="font-size:0.8rem;color:#555;margin-top:2px">°C</div>
+        </div>
+        <div style="background:#fffbe8;border-radius:12px;padding:14px 12px;text-align:center;border:2px solid #f0e8a0">
+          <div style="font-size:0.7rem;font-weight:700;color:#b8860b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">☀️ LUZ</div>
+          <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--vd);line-height:1">${btData.luz}</div>
+          <div style="font-size:0.8rem;color:#555;margin-top:2px">lux</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="bt-p" style="flex:1;padding:10px 12px;border-radius:9px;border:2px solid var(--vme);background:var(--cre);color:var(--vd);font-family:'Lato',sans-serif;font-size:0.88rem;font-weight:700">${plantas.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}</select>
+        <button class="btn btn-p" onclick="guardarBT()" style="font-size:0.9rem;padding:10px 18px">💾 Guardar medición</button>
+      </div>
+    </div>`;
+  } else {
+    bth=`<div style="background:#fff;border-radius:var(--rad);box-shadow:var(--som);padding:20px 16px;margin-bottom:14px;border:3px dashed var(--vme);text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--vd);margin-bottom:6px">🌿 Flower Care</div>
+      <div id="btest" style="font-size:0.82rem;color:#888;margin-bottom:14px">Sensor desconectado</div>
+      <button class="btn btn-p btn-full" style="font-size:1rem;padding:13px" onclick="conectarBT()">📡 Conectar sensor Bluetooth</button>
+    </div>`;
+  }
+
+  let h=`<div class="sec-title">📊 Mediciones</div>${bth}<button class="btn btn-p btn-sm" style="margin-bottom:14px" onclick="abrirMMG()">+ Medición manual</button>`;
+  if(!ul.length)h+=`<div class="empty"><div class="ei">📊</div><p>Sin mediciones todavía</p></div>`;
+  ul.forEach(m=>{const pl=plantas.find(p=>p.id===m.plantaId);h+=`<div class="log med"><div class="ld">${fdth(m.fecha)} · <strong>${pl?pl.nombre:'—'}</strong></div><div class="lm">${m.ec?'⚡'+m.ec+' mS/cm ':''} ${m.hum?'💧'+m.hum+'% ':''}</div><div class="ll">${m.tmp?'🌡️'+m.tmp+'°C ':''} ${m.luz?'☀️'+m.luz+' lux':''}</div></div>`;});
+  document.getElementById('pg-mediciones').innerHTML=h;
+  fab(false);
+}
+let btDevice=null;
+
+async function conectarBT(){
+  if(!navigator.bluetooth){toast('⚠️ Bluetooth no disponible. Usa Chrome en Android.');return;}
+  const el=document.getElementById('btest');
+  if(el)el.textContent='Buscando sensor...';
+  try{
+    if(!btDevice){
+      btDevice=await navigator.bluetooth.requestDevice({
+        filters:[{name:'Flower care'},{name:'Flower Care'},{namePrefix:'Flower'}],
+        optionalServices:['0000fe95-0000-1000-8000-00805f9b34fb']
+      });
+    }
+    if(btDevice.gatt.connected){btDevice.gatt.disconnect();await new Promise(r=>setTimeout(r,400));}
+    if(el)el.textContent='Conectando...';
+    const server=await btDevice.gatt.connect();
+    if(el)el.textContent='Activando sensor...';
+    const service=await server.getPrimaryService('0000fe95-0000-1000-8000-00805f9b34fb');
+
+    // Escribir 0xA01F en la característica de cambio de modo para activar lectura en tiempo real
+    // UUID de la característica mode-change del Flower Care
+    const modeChar=await service.getCharacteristic('00001a00-0000-1000-8000-00805f9b34fb');
+    await modeChar.writeValue(new Uint8Array([0xA0,0x1F]));
+    await new Promise(r=>setTimeout(r,500));
+
+    if(el)el.textContent='Leyendo datos...';
+    // Leer 16 bytes de la característica de datos en tiempo real
+    const dataChar=await service.getCharacteristic('00001a01-0000-1000-8000-00805f9b34fb');
+    const raw=await dataChar.readValue();
+    // Desconectar para liberar el sensor
+    try{btDevice.gatt.disconnect();}catch(e){}
+
+    // Decodificar 16 bytes según protocolo MiFlora/HHCCJCY01:
+    // bytes 0-1: temperatura (little-endian, dividir entre 10)
+    // bytes 3-5: luz (little-endian, 3 bytes)
+    // byte 6:    humedad
+    // bytes 7-8: conductividad EC (little-endian)
+    const b=new Uint8Array(raw.buffer);
+    console.log('FlowerCare bytes:',Array.from(b));
+    const tmp=((b[1]<<8)|b[0])/10;
+    const luz=(b[5]<<16)|(b[4]<<8)|b[3];
+    const hum=b[6];
+    const ec=(b[8]<<8)|b[7];
+
+    btData={ec:ec.toFixed(0),hum:hum.toFixed(0),tmp:tmp.toFixed(1),luz:luz.toFixed(0)};
+    toast('✓ Datos leídos correctamente');
+    rMeds();
+
+  }catch(e){
+    console.error('BT:',e.name,e.message);
+    try{if(btDevice&&btDevice.gatt.connected)btDevice.gatt.disconnect();}catch(x){}
+    if(e.name==='NotFoundError'){btDevice=null;}
+    else{toast('Error BT: '+e.message.slice(0,60));}
+    btData=null;
+    rMeds();
+  }
+}
+
+function guardarBT(){
+  const sel=document.getElementById('bt-p');if(!sel||!btData)return;
+  meds.push({id:uid(),plantaId:sel.value,fecha:new Date().toISOString(),ec:btData.ec,hum:btData.hum,tmp:btData.tmp,luz:btData.luz,nt:'Lectura automática Flower Care'});
+  saveAll();toast('Guardado desde sensor ✓');rMeds();
+}
+function abrirMMG(){
+  document.getElementById('mg-planta').innerHTML=plantas.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  document.getElementById('mg-fecha').value=nowDTL();
+  ['mg-ec','mg-hum','mg-temp','mg-luz','mg-notas'].forEach(id=>document.getElementById(id).value='');
+  openModal('ov-medg');
+}
+function guardarMedG(){
+  meds.push({id:uid(),plantaId:document.getElementById('mg-planta').value,fecha:document.getElementById('mg-fecha').value,ec:document.getElementById('mg-ec').value,hum:document.getElementById('mg-hum').value,tmp:document.getElementById('mg-temp').value,luz:document.getElementById('mg-luz').value,nt:document.getElementById('mg-notas').value});
+  saveAll();closeModal('ov-medg');toast('Medición guardada ✓');rMeds();
+}
+
+// ── BIBLIOTECA ──
+function rBib(){
+  let h=`<div class="sec-title">📚 Biblioteca</div><div class="tabrw"><button class="dtab ${bibTab==='soluciones'?'active':''}" onclick="setBib('soluciones')">💊 Soluciones</button><button class="dtab ${bibTab==='cultivos'?'active':''}" onclick="setBib('cultivos')">🌱 Cultivos</button></div>`;
+  if(bibTab==='soluciones'){
+    h+=`<button class="btn btn-p btn-sm" style="margin-bottom:14px" onclick="abrirMS()">+ Nueva fórmula</button>`;
+    if(!sols.length)h+=`<div class="empty"><div class="ei">💊</div><p>Sin fórmulas guardadas</p></div>`;
+    sols.forEach(s=>{h+=`<div class="libc"><div class="libn">${s.nom}</div>${s.fase?`<span class="badge bgv" style="margin-bottom:5px;display:inline-block">${s.fase}</span>`:''}<div class="libd" style="white-space:pre-line">${s.comp||''}</div>${(s.ec||s.ph)?`<div class="libd">EC obj: ${s.ec||'—'} · pH obj: ${s.ph||'—'}</div>`:''}${s.nt?`<div class="libd" style="font-style:italic;margin-top:4px">${s.nt}</div>`:''}<button class="btn btn-d" style="margin-top:8px" onclick="elimS('${s.id}')">🗑 Eliminar</button></div>`;});
+    fab(true,()=>abrirMS());
+  }else{
+    CULTIVOS.forEach((c,i)=>{const op=cultiIdx===i;h+=`<div class="libc" style="border-left-color:var(--vc)"><button class="accb" onclick="togC(${i})"><span>${c.n} <span style="font-size:0.75rem;font-weight:400;font-style:italic;color:#888">${c.sp}</span></span><span>${op?'▲':'▼'}</span></button>${op?`<div style="margin-top:10px;display:grid;gap:8px"><div class="kv"><div class="k">EC recomendada</div><div class="v">${c.ec}</div></div><div class="kv"><div class="k">Humedad sustrato</div><div class="v">${c.hum}</div></div><div class="kv"><div class="k">Temperatura</div><div class="v">${c.tmp}</div></div><div class="kv"><div class="k">Plagas frecuentes</div><div class="v">${c.pl}</div></div><div class="kv"><div class="k">Notas</div><div class="v">${c.nt}</div></div></div>`:''}</div>`;});
+    fab(false);
+  }
+  document.getElementById('pg-biblioteca').innerHTML=h;
+}
+function setBib(t){bibTab=t;rBib();}
+function togC(i){cultiIdx=cultiIdx===i?null:i;rBib();}
+
+// ── MODAL PLANTA ──
+function abrirModalPlanta(){
+  selIco='🌱';
+  document.getElementById('ico-sel').innerHTML=ICOS.map(ic=>`<span class="${ic===selIco?'sel':''}" onclick="selI('${ic}')">${ic}</span>`).join('');
+  ['p-nombre','p-especie','p-sustrato','p-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-cont').value='Torre aeropónica';
+  document.getElementById('p-fecha').value=hoy();
+  openModal('ov-planta');
+}
+function selI(ic){selIco=ic;document.querySelectorAll('#ico-sel span').forEach(s=>s.classList.toggle('sel',s.textContent===ic));}
+function guardarPlanta(){
+  const n=document.getElementById('p-nombre').value.trim();
+  if(!n){toast('⚠️ El nombre es obligatorio');return;}
+  plantas.push({id:uid(),ico:selIco,nombre:n,esp:document.getElementById('p-especie').value,cont:document.getElementById('p-cont').value,sus:document.getElementById('p-sustrato').value,fecha:document.getElementById('p-fecha').value,nt:document.getElementById('p-notas').value});
+  saveAll();closeModal('ov-planta');toast('Planta añadida ✓');rPlantas();
+}
+function elimP(id){
+  if(!confirm('¿Eliminar esta planta y todos sus registros?'))return;
+  plantas=plantas.filter(p=>p.id!==id);riegos=riegos.filter(r=>r.plantaId!==id);tratos=tratos.filter(t=>t.plantaId!==id);meds=meds.filter(m=>m.plantaId!==id);obs=obs.filter(o=>o.plantaId!==id);cosechas=cosechas.filter(c=>c.plantaId!==id);
+  saveAll();plantaId=null;toast('Planta eliminada');rPlantas();
+}
+
+// ── MODAL RIEGO ──
+function abrirMR(){
+  document.getElementById('r-fecha').value=nowDTL();
+  ['r-vol','r-ec','r-ph','r-extra','r-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('r-sol').innerHTML='<option value="">— Agua sola —</option>'+sols.map(s=>`<option value="${s.nom}">${s.nom}</option>`).join('');
+  openModal('ov-riego');
+}
+function guardarRiego(){
+  riegos.push({id:uid(),plantaId:plantaId,fecha:document.getElementById('r-fecha').value,vol:document.getElementById('r-vol').value,sol:document.getElementById('r-sol').value,ext:document.getElementById('r-extra').value,ec:document.getElementById('r-ec').value,ph:document.getElementById('r-ph').value,nt:document.getElementById('r-notas').value});
+  saveAll();closeModal('ov-riego');toast('Riego registrado ✓');rDetC();
+}
+
+// ── MODAL TRATAMIENTO ──
+function abrirMT(){
+  document.getElementById('t-fecha').value=nowDTL();
+  ['t-prod','t-dosis','t-plaga','t-notas'].forEach(id=>document.getElementById(id).value='');
+  openModal('ov-trat');
+}
+function guardarTrat(){
+  const p=document.getElementById('t-prod').value.trim();
+  if(!p){toast('⚠️ Indica el producto');return;}
+  tratos.push({id:uid(),plantaId:plantaId,fecha:document.getElementById('t-fecha').value,prod:p,dos:document.getElementById('t-dosis').value,met:document.getElementById('t-met').value,mot:document.getElementById('t-mot').value,plg:document.getElementById('t-plaga').value,nt:document.getElementById('t-notas').value});
+  saveAll();closeModal('ov-trat');toast('Tratamiento registrado ✓');rDetC();
+}
+
+// ── MODAL MEDICIÓN (planta) ──
+function abrirMM(){
+  document.getElementById('m-fecha').value=nowDTL();
+  ['m-ec','m-hum','m-temp','m-luz','m-notas'].forEach(id=>document.getElementById(id).value='');
+  openModal('ov-med');
+}
+function guardarMed(){
+  meds.push({id:uid(),plantaId:plantaId,fecha:document.getElementById('m-fecha').value,ec:document.getElementById('m-ec').value,hum:document.getElementById('m-hum').value,tmp:document.getElementById('m-temp').value,luz:document.getElementById('m-luz').value,nt:document.getElementById('m-notas').value});
+  saveAll();closeModal('ov-med');toast('Medición guardada ✓');rDetC();
+}
+
+// ── MODAL OBSERVACIÓN ──
+function abrirMO(){
+  document.getElementById('o-fecha').value=nowDTL();
+  document.getElementById('o-texto').value='';
+  openModal('ov-obs');
+}
+function guardarObs(){
+  const t=document.getElementById('o-texto').value.trim();
+  if(!t)return;
+  obs.push({id:uid(),plantaId:plantaId,fecha:document.getElementById('o-fecha').value,txt:t});
+  saveAll();closeModal('ov-obs');toast('Observación guardada ✓');rDetC();
+}
+
+// ── MODAL COSECHA ──
+function abrirMC(){
+  document.getElementById('c-fecha').value=hoy();
+  document.getElementById('c-cant').value='';
+  document.getElementById('c-notas').value='';
+  selStars=3;document.getElementById('c-cal').value='3';rStars();
+  openModal('ov-cos');
+}
+function rStars(){const el=document.getElementById('stars-sel');if(!el)return;el.innerHTML=[1,2,3,4,5].map(n=>`<span onclick="setStar(${n})" style="font-size:1.8rem;cursor:pointer;color:var(--tiec);opacity:${n<=selStars?1:0.3}">★</span>`).join('');}
+function setStar(n){selStars=n;document.getElementById('c-cal').value=n;rStars();}
+function guardarCos(){
+  const c=document.getElementById('c-cant').value;
+  if(!c)return;
+  cosechas.push({id:uid(),plantaId:plantaId,fecha:document.getElementById('c-fecha').value,cant:c,uni:document.getElementById('c-uni').value,cal:document.getElementById('c-cal').value,nt:document.getElementById('c-notas').value});
+  saveAll();closeModal('ov-cos');toast('Cosecha registrada ✓');rDetC();
+}
+
+// ── MODAL SOLUCIÓN ──
+function abrirMS(){
+  ['s-nom','s-comp','s-ec','s-ph','s-notas'].forEach(id=>document.getElementById(id).value='');
+  openModal('ov-sol');
+}
+function guardarSol(){
+  const n=document.getElementById('s-nom').value.trim();
+  if(!n){toast('⚠️ El nombre es obligatorio');return;}
+  sols.push({id:uid(),nom:n,fase:document.getElementById('s-fase').value,comp:document.getElementById('s-comp').value,ec:document.getElementById('s-ec').value,ph:document.getElementById('s-ph').value,nt:document.getElementById('s-notas').value});
+  saveAll();closeModal('ov-sol');toast('Fórmula guardada ✓');rBib();
+}
+function elimS(id){sols=sols.filter(s=>s.id!==id);saveAll();toast('Fórmula eliminada');rBib();}
+
+// ── FOTOS ──
+function subirPortada(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';inp.capture='environment';
+  inp.onchange=async e=>{
+    const file=e.target.files[0];if(!file)return;
+    toast('⏳ Subiendo portada...');
+    const url=await window.subirImgFirebase(file,`portada_${plantaId}`);
+    if(url){
+      const idx=plantas.findIndex(x=>x.id===plantaId);
+      if(idx>=0){plantas[idx].portada=url;saveAll();rPlantas();toast('Portada actualizada ✓');}
+    }
+  };
+  inp.click();
+}
+
+function subirFotoAlbum(modo){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  if(modo==='camara')inp.capture='environment';
+  inp.onchange=async e=>{
+    const file=e.target.files[0];if(!file)return;
+    const prog=document.getElementById('upprog');
+    const bar=document.getElementById('uppbar');
+    if(prog){prog.style.display='block';bar.style.width='30%';}
+    toast('⏳ Subiendo foto...');
+    const url=await window.subirImgFirebase(file,`album_${plantaId}_${uid()}`);
+    if(url){
+      const idx=plantas.findIndex(x=>x.id===plantaId);
+      if(idx>=0){
+        if(!plantas[idx].album)plantas[idx].album=[];
+        plantas[idx].album.unshift({url,fecha:new Date().toISOString()});
+        saveAll();
+        if(bar)bar.style.width='100%';
+        setTimeout(()=>{if(prog)prog.style.display='none';rDetC();},400);
+        toast('Foto añadida ✓');
+      }
+    }
+  };
+  inp.click();
+}
+
+function elimFoto(idx){
+  if(!confirm('¿Eliminar esta foto?'))return;
+  const pi=plantas.findIndex(x=>x.id===plantaId);
+  if(pi>=0){plantas[pi].album.splice(idx,1);saveAll();rDetC();toast('Foto eliminada');}
+}
+
+function abrirFotoGrande(url){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;display:flex;align-items:center;justify-content:center;';
+  ov.innerHTML=`<img src="${url}" style="max-width:95%;max-height:90vh;border-radius:10px;"><button onclick="this.parentNode.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.2);border:none;border-radius:50%;width:36px;height:36px;color:white;font-size:1.2rem;cursor:pointer;">✕</button>`;
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  document.body.appendChild(ov);
+}
+
+// INIT
+render();
+</script>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDG3KsEGSJSE_JaGVo7Wvw6VoHGkFhURyE",
+  authDomain: "mi-huerto-urbano.firebaseapp.com",
+  projectId: "mi-huerto-urbano",
+  storageBucket: "mi-huerto-urbano.firebasestorage.app",
+  messagingSenderId: "699227874794",
+  appId: "1:699227874794:web:a11f5a4073e74eb1267e93"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+const DOC = doc(db, "huerto", "datos");
+
+// Subir imagen a Firebase Storage
+window.subirImgFirebase = async function(file, nombre) {
+  try {
+    const storageRef = ref(storage, `fotos/${nombre}`);
+    const snap = await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(snap.ref);
+    return url;
+  } catch(e) {
+    console.error("Error subiendo imagen:", e);
+    toast('⚠️ Error al subir la foto');
+    return null;
+  }
+};
+
+// Subir datos a Firebase
+window.syncToFirebase = async function() {
+  try {
+    await setDoc(DOC, {
+      plantas, riegos, tratos, meds, obs, cosechas, sols, avisos,
+      updated: new Date().toISOString()
+    });
+  } catch(e) {
+    console.error("Error sync Firebase:", e);
+  }
+};
+
+// Sobreescribir saveAll para que también sincronice
+const _saveAll = window.saveAll || saveAll;
+window.saveAllCloud = function() {
+  _saveAll();
+  window.syncToFirebase();
+};
+
+// Escuchar cambios en tiempo real desde Firebase
+onSnapshot(DOC, (snap) => {
+  if (!snap.exists()) return;
+  const d = snap.data();
+  const localTs = localStorage.getItem('hu_updated') || '0';
+  if (d.updated && d.updated > localTs) {
+    if (d.plantas)    { plantas   = d.plantas;   DB.save('hu_p', plantas); }
+    if (d.riegos)     { riegos    = d.riegos;    DB.save('hu_r', riegos); }
+    if (d.tratos)     { tratos    = d.tratos;    DB.save('hu_t', tratos); }
+    if (d.meds)       { meds      = d.meds;      DB.save('hu_m', meds); }
+    if (d.obs)        { obs       = d.obs;        DB.save('hu_o', obs); }
+    if (d.cosechas)   { cosechas  = d.cosechas;  DB.save('hu_c', cosechas); }
+    if (d.sols)       { sols      = d.sols;      DB.save('hu_s', sols); }
+    if (d.avisos)     { avisos    = d.avisos;    DB.save('hu_a', avisos); }
+    localStorage.setItem('hu_updated', d.updated);
+    btData = null; // Bluetooth nunca persiste entre sesiones
+    render();
+    const t = document.getElementById('toast');
+    t.textContent = '☁️ Datos sincronizados';
+    t.className = 'toast show';
+    setTimeout(() => t.className = 'toast', 2000);
+  }
+});
+
+// Subir datos locales al arrancar si Firebase está vacío
+getDoc(DOC).then(snap => {
+  if (!snap.exists() && plantas.length > 0) {
+    window.syncToFirebase();
+  }
+});
+
+// Parchear saveAll global para incluir sync en la nube
+// Redefinir la función saveAll que usa el resto del código
+Object.defineProperty(window, 'saveAll', {
+  get: () => window.saveAllCloud,
+  configurable: true
+});
+
+console.log("✅ Firebase conectado — Mi Huerto Urbano");
+</script>
+
+</body>
+</html>
