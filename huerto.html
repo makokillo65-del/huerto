@@ -139,7 +139,6 @@ body{font-family:'Lato',sans-serif;background:var(--fon);color:var(--vd);min-hei
     <button class="active" onclick="goTab('dashboard')"><span class="ico">🏡</span>Inicio</button>
     <button onclick="goTab('plantas')"><span class="ico">🌱</span>Plantas</button>
     <button onclick="goTab('avisos')"><span class="ico">🔔</span>Avisos</button>
-    <button onclick="goTab('mediciones')"><span class="ico">📊</span>Medic.</button>
     <button onclick="goTab('biblioteca')"><span class="ico">📚</span>Biblioteca</button>
   </nav>
 </div>
@@ -294,6 +293,20 @@ body{font-family:'Lato',sans-serif;background:var(--fon);color:var(--vd);min-hei
   </div>
 </div>
 
+<div class="overlay" id="ov-fc">
+  <div class="modal">
+    <div class="mhdr"><h2>🌿 Flower Care</h2><button class="bx" onclick="closeModal('ov-fc')">✕</button></div>
+    <div class="fg"><label>Planta</label><select id="fc-planta"></select></div>
+    <div class="fg"><label>Fecha y hora</label><input type="datetime-local" id="fc-fecha"></div>
+    <div class="row2">
+      <div class="fg"><label style="font-size:0.85rem;color:var(--vm)">⚡ EC (µS/cm)</label><input type="number" inputmode="numeric" id="fc-ec" placeholder="ej: 313" style="font-size:1.5rem;font-weight:700;text-align:center;padding:14px 10px"></div>
+      <div class="fg"><label style="font-size:0.85rem;color:var(--az)">💧 Humedad (%)</label><input type="number" inputmode="numeric" id="fc-hum" placeholder="ej: 65" style="font-size:1.5rem;font-weight:700;text-align:center;padding:14px 10px"></div>
+    </div>
+    <div class="fg"><label>Notas</label><textarea id="fc-notas" placeholder="Opcional..."></textarea></div>
+    <button class="btn btn-p btn-full" style="font-size:1rem;padding:14px" onclick="guardarFC()">✓ Guardar</button>
+  </div>
+</div>
+
 <script>
 const DB={
   load(k,d=[]){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}},
@@ -309,7 +322,7 @@ let sols=DB.load('hu_s');
 let avisos=DB.load('hu_a');
 const saveAll=()=>{DB.save('hu_p',plantas);DB.save('hu_r',riegos);DB.save('hu_t',tratos);DB.save('hu_m',meds);DB.save('hu_o',obs);DB.save('hu_c',cosechas);DB.save('hu_s',sols);DB.save('hu_a',avisos);};
 
-let tab='dashboard',plantaId=null,detTab='riegos',selIco='🌱',selStars=3,btData=null,bibTab='soluciones',cultiIdx=null;
+let tab='dashboard',plantaId=null,detTab='riegos',selIco='🌱',selStars=3,bibTab='soluciones',cultiIdx=null,docs=DB.load('hu_docs',[]);
 const ICOS=['🌱','🍅','🍓','🌶️','🥬','🌿','🫑','🥦','🌸','🌾','🧅','🫛'];
 const CULTIVOS=[
   {n:'Tomate',sp:'Solanum lycopersicum',ec:'2.0–3.5 mS/cm',hum:'60–80%',tmp:'18–27°C',pl:'Tuta absoluta, mosca blanca, trips',nt:'Necesita soporte. Polinización manual en interior.'},
@@ -339,7 +352,7 @@ function goTab(t){
   tab=t;plantaId=null;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pg-'+t).classList.add('active');
-  document.querySelectorAll('.nav button').forEach((b,i)=>b.classList.toggle('active',['dashboard','plantas','avisos','mediciones','biblioteca'][i]===t));
+  document.querySelectorAll('.nav button').forEach((b,i)=>b.classList.toggle('active',['dashboard','plantas','avisos','biblioteca'][i]===t));
   render();
 }
 
@@ -393,7 +406,18 @@ function rDetalle(pg){
   const p=plantas.find(x=>x.id===plantaId);
   if(!p){plantaId=null;rPlantas();return;}
   const tabs=[{id:'riegos',l:'💧 Riegos'},{id:'trats',l:'🧪 Trat.'},{id:'meds',l:'📊 Meds.'},{id:'obs',l:'📝 Notas'},{id:'cos',l:'🧺 Cosecha'},{id:'fotos',l:'📷 Fotos'},{id:'ficha',l:'🪴 Ficha'}];
-  const portada=p.portada?`<img src="${p.portada}" class="foto-portada" style="cursor:pointer" onclick="abrirFotoGrande('${p.portada}')">`:`<div class="foto-ph" onclick="subirPortada()">📷 Añadir foto de portada</div>`;
+  const portada=p.portada?
+    `<div style="position:relative;margin-bottom:12px">
+      <img src="${p.portada}" class="foto-portada" style="cursor:pointer;margin-bottom:0" onclick="abrirFotoGrande('${p.portada}')">
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="upbtn" style="flex:1;justify-content:center;font-size:0.78rem;padding:7px 10px" onclick="subirPortada('camara')">📷 Nueva foto</button>
+        <button class="upbtn" style="flex:1;justify-content:center;font-size:0.78rem;padding:7px 10px;background:var(--tie)" onclick="subirPortada('galeria')">🖼️ Cambiar</button>
+      </div>
+    </div>`
+    :`<div style="display:flex;gap:6px;margin-bottom:12px">
+      <div class="foto-ph" style="flex:1;margin-bottom:0" onclick="subirPortada('camara')">📷 Hacer foto</div>
+      <div class="foto-ph" style="flex:1;margin-bottom:0" onclick="subirPortada('galeria')">🖼️ Desde galería</div>
+    </div>`;
   let h=`<button class="btn btn-s btn-sm" style="margin-bottom:14px" onclick="volverL()">← Volver</button>
   ${portada}
   <div class="dhdr"><div class="dico">${p.ico}</div><div><div class="dn">${p.nombre}</div><div class="dsp">${p.esp||''}</div><div class="dme">${p.cont||''} · Plantado ${fdt(p.fecha)}</div></div></div>
@@ -521,130 +545,11 @@ function guardarAviso(){
 function rMeds(){
   const ul=[...meds].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,20);
 
-  let bth='';
-  if(btData){
-    bth=`<div style="background:#fff;border-radius:var(--rad);box-shadow:var(--som);padding:16px;margin-bottom:14px;border:3px solid var(--vm)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--vd)">🌿 Flower Care</div>
-        <span style="background:#e8f5e2;color:var(--vm);font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:20px;border:2px solid var(--vm)">● CONECTADO</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <div style="background:#e8f5e2;border-radius:12px;padding:14px 12px;text-align:center;border:2px solid var(--vme)">
-          <div style="font-size:0.7rem;font-weight:700;color:var(--vm);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">⚡ EC</div>
-          <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--vd);line-height:1">${btData.ec}</div>
-          <div style="font-size:0.8rem;color:#555;margin-top:2px">mS/cm</div>
-        </div>
-        <div style="background:#e3f0fb;border-radius:12px;padding:14px 12px;text-align:center;border:2px solid #a8d4f0">
-          <div style="font-size:0.7rem;font-weight:700;color:var(--az);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">💧 HUMEDAD</div>
-          <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--vd);line-height:1">${btData.hum}</div>
-          <div style="font-size:0.8rem;color:#555;margin-top:2px">%</div>
-        </div>
-        <div style="background:#fff8e8;border-radius:12px;padding:14px 12px;text-align:center;border:2px solid #f0dfa0">
-          <div style="font-size:0.7rem;font-weight:700;color:var(--tie);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">🌡️ TEMPERATURA</div>
-          <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--vd);line-height:1">${btData.tmp}</div>
-          <div style="font-size:0.8rem;color:#555;margin-top:2px">°C</div>
-        </div>
-        <div style="background:#fffbe8;border-radius:12px;padding:14px 12px;text-align:center;border:2px solid #f0e8a0">
-          <div style="font-size:0.7rem;font-weight:700;color:#b8860b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">☀️ LUZ</div>
-          <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--vd);line-height:1">${btData.luz}</div>
-          <div style="font-size:0.8rem;color:#555;margin-top:2px">lux</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <select id="bt-p" style="flex:1;padding:10px 12px;border-radius:9px;border:2px solid var(--vme);background:var(--cre);color:var(--vd);font-family:'Lato',sans-serif;font-size:0.88rem;font-weight:700">${plantas.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}</select>
-        <button class="btn btn-p" onclick="guardarBT()" style="font-size:0.9rem;padding:10px 18px">💾 Guardar medición</button>
-      </div>
-    </div>`;
-  } else {
-    bth=`<div style="background:#fff;border-radius:var(--rad);box-shadow:var(--som);padding:20px 16px;margin-bottom:14px;border:3px dashed var(--vme);text-align:center">
-      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--vd);margin-bottom:6px">🌿 Flower Care</div>
-      <div id="btest" style="font-size:0.82rem;color:#888;margin-bottom:14px">Sensor desconectado</div>
-      <button class="btn btn-p btn-full" style="font-size:1rem;padding:13px" onclick="conectarBT()">📡 Conectar sensor Bluetooth</button>
-    </div>`;
-  }
-
-  let h=`<div class="sec-title">📊 Mediciones</div>${bth}<button class="btn btn-p btn-sm" style="margin-bottom:14px" onclick="abrirMMG()">+ Medición manual</button>`;
+  let h=`<div class="sec-title">📊 Mediciones</div>${bth}<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="abrirFC()">🌿 Flower Care</button><button class="btn btn-s btn-sm" onclick="abrirMMG()">+ Medición manual</button></div>`;
   if(!ul.length)h+=`<div class="empty"><div class="ei">📊</div><p>Sin mediciones todavía</p></div>`;
   ul.forEach(m=>{const pl=plantas.find(p=>p.id===m.plantaId);h+=`<div class="log med"><div class="ld">${fdth(m.fecha)} · <strong>${pl?pl.nombre:'—'}</strong></div><div class="lm">${m.ec?'⚡'+m.ec+' mS/cm ':''} ${m.hum?'💧'+m.hum+'% ':''}</div><div class="ll">${m.tmp?'🌡️'+m.tmp+'°C ':''} ${m.luz?'☀️'+m.luz+' lux':''}</div></div>`;});
   document.getElementById('pg-mediciones').innerHTML=h;
   fab(false);
-}
-let btDevice=null;
-
-async function conectarBT(){
-  if(!navigator.bluetooth){toast('⚠️ Bluetooth no disponible. Usa Chrome en Android.');return;}
-  const el=document.getElementById('btest');
-  if(el)el.textContent='Buscando sensor...';
-  try{
-    if(!btDevice){
-      btDevice=await navigator.bluetooth.requestDevice({
-        filters:[{name:'Flower care'},{name:'Flower Care'},{namePrefix:'Flower'}],
-        optionalServices:['0000fe95-0000-1000-8000-00805f9b34fb']
-      });
-    }
-    if(btDevice.gatt.connected){btDevice.gatt.disconnect();await new Promise(r=>setTimeout(r,400));}
-    if(el)el.textContent='Conectando...';
-    const server=await btDevice.gatt.connect();
-    const service=await server.getPrimaryService('0000fe95-0000-1000-8000-00805f9b34fb');
-
-    // Leer específicamente la característica 0x13 que tiene 20 bytes de datos reales
-    let bestData=null;
-    try{
-      const dataChar=await service.getCharacteristic('00000013-0000-1000-8000-00805f9b34fb');
-      bestData=await dataChar.readValue();
-    }catch(e){
-      // fallback: leer la característica con más bytes
-      const chars=await service.getCharacteristics();
-      let bestLen=0;
-      for(const c of chars){
-        if(c.properties.read){
-          try{
-            const val=await c.readValue();
-            if(val.byteLength>bestLen){bestLen=val.byteLength;bestData=val;}
-          }catch(e){}
-        }
-      }
-    }
-
-    try{btDevice.gatt.disconnect();}catch(e){}
-
-    if(!bestData||bestData.byteLength<7){
-      toast('⚠️ No se pudieron leer datos');
-      btData=null;rMeds();return;
-    }
-
-    const b=new Uint8Array(bestData.buffer);
-    console.log('Bytes sensor ('+b.length+'):',Array.from(b));
-
-    // Protocolo real HHCCJCY01 confirmado por análisis de bytes:
-    // bytes 0-1: temperatura little-endian / 10 (en décimas de grado)
-    // bytes 3-5: luz little-endian 3 bytes
-    // byte 6:    humedad (255 = fuera de sustrato = 0%)
-    // bytes 7-8: EC little-endian (18940+ = fuera de sustrato = 0 µS/cm)
-    const tmp=((b[1]<<8)|b[0])/10;
-    const luz=(b[5]<<16)|(b[4]<<8)|b[3];
-    const hum=b[6]>=250?0:b[6];
-    const ecRaw=(b[8]<<8)|b[7];
-    const ec=ecRaw>10000?0:ecRaw;
-
-    btData={ec:ec.toFixed(0),hum:hum.toFixed(0),tmp:tmp.toFixed(1),luz:luz.toFixed(0)};
-    toast('✓ Datos leídos correctamente');
-    rMeds();
-
-  }catch(e){
-    console.error('BT:',e.name,e.message);
-    try{if(btDevice&&btDevice.gatt.connected)btDevice.gatt.disconnect();}catch(x){}
-    if(e.name==='NotFoundError'){btDevice=null;}
-    else{toast('Error BT: '+e.message.slice(0,60));}
-    btData=null;
-    rMeds();
-  }
-}
-
-function guardarBT(){
-  const sel=document.getElementById('bt-p');if(!sel||!btData)return;
-  meds.push({id:uid(),plantaId:sel.value,fecha:new Date().toISOString(),ec:btData.ec,hum:btData.hum,tmp:btData.tmp,luz:btData.luz,nt:'Lectura automática Flower Care'});
-  saveAll();toast('Guardado desde sensor ✓');rMeds();
 }
 function abrirMMG(){
   document.getElementById('mg-planta').innerHTML=plantas.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
@@ -656,20 +561,61 @@ function guardarMedG(){
   meds.push({id:uid(),plantaId:document.getElementById('mg-planta').value,fecha:document.getElementById('mg-fecha').value,ec:document.getElementById('mg-ec').value,hum:document.getElementById('mg-hum').value,tmp:document.getElementById('mg-temp').value,luz:document.getElementById('mg-luz').value,nt:document.getElementById('mg-notas').value});
   saveAll();closeModal('ov-medg');toast('Medición guardada ✓');rMeds();
 }
+function abrirFC(){
+  document.getElementById("fc-planta").innerHTML=plantas.map(p=>`<option value="${p.id}">${p.ico} ${p.nombre}</option>`).join("");
+  document.getElementById("fc-fecha").value=nowDTL();
+  document.getElementById("fc-ec").value="";
+  document.getElementById("fc-hum").value="";
+  document.getElementById("fc-notas").value="";
+  openModal("ov-fc");
+}
+function guardarFC(){
+  const pid=document.getElementById("fc-planta").value;
+  const ec=String(document.getElementById("fc-ec").value).trim();
+  const hum=String(document.getElementById("fc-hum").value).trim();
+  if(ec===''&&hum===''){toast("⚠️ Introduce EC o Humedad");return;}
+  const ecMs=ec!==''?(parseFloat(ec)/1000).toFixed(3):"";
+  meds.push({id:uid(),plantaId:pid,fecha:document.getElementById("fc-fecha").value,ec:ecMs,hum:hum,tmp:"",luz:"",nt:document.getElementById("fc-notas").value||"Lectura Flower Care"});
+  saveAll();closeModal("ov-fc");toast("Lectura Flower Care guardada ✓");rMeds();
+}
 
 // ── BIBLIOTECA ──
 function rBib(){
-  let h=`<div class="sec-title">📚 Biblioteca</div><div class="tabrw"><button class="dtab ${bibTab==='soluciones'?'active':''}" onclick="setBib('soluciones')">💊 Soluciones</button><button class="dtab ${bibTab==='cultivos'?'active':''}" onclick="setBib('cultivos')">🌱 Cultivos</button></div>`;
+  let h=`<div class="sec-title">📚 Biblioteca</div><div class="tabrw"><button class="dtab ${bibTab==='soluciones'?'active':''}" onclick="setBib('soluciones')">💊 Soluciones</button><button class="dtab ${bibTab==='cultivos'?'active':''}" onclick="setBib('cultivos')">🌱 Cultivos</button><button class="dtab ${bibTab==='docs'?'active':''}" onclick="setBib('docs')">📄 PDFs</button></div>`;
   if(bibTab==='soluciones'){
     h+=`<button class="btn btn-p btn-sm" style="margin-bottom:14px" onclick="abrirMS()">+ Nueva fórmula</button>`;
     if(!sols.length)h+=`<div class="empty"><div class="ei">💊</div><p>Sin fórmulas guardadas</p></div>`;
     sols.forEach(s=>{h+=`<div class="libc"><div class="libn">${s.nom}</div>${s.fase?`<span class="badge bgv" style="margin-bottom:5px;display:inline-block">${s.fase}</span>`:''}<div class="libd" style="white-space:pre-line">${s.comp||''}</div>${(s.ec||s.ph)?`<div class="libd">EC obj: ${s.ec||'—'} · pH obj: ${s.ph||'—'}</div>`:''}${s.nt?`<div class="libd" style="font-style:italic;margin-top:4px">${s.nt}</div>`:''}<button class="btn btn-d" style="margin-top:8px" onclick="elimS('${s.id}')">🗑 Eliminar</button></div>`;});
     fab(true,()=>abrirMS());
-  }else{
+  }else if(bibTab==='cultivos'){
     CULTIVOS.forEach((c,i)=>{const op=cultiIdx===i;h+=`<div class="libc" style="border-left-color:var(--vc)"><button class="accb" onclick="togC(${i})"><span>${c.n} <span style="font-size:0.75rem;font-weight:400;font-style:italic;color:#888">${c.sp}</span></span><span>${op?'▲':'▼'}</span></button>${op?`<div style="margin-top:10px;display:grid;gap:8px"><div class="kv"><div class="k">EC recomendada</div><div class="v">${c.ec}</div></div><div class="kv"><div class="k">Humedad sustrato</div><div class="v">${c.hum}</div></div><div class="kv"><div class="k">Temperatura</div><div class="v">${c.tmp}</div></div><div class="kv"><div class="k">Plagas frecuentes</div><div class="v">${c.pl}</div></div><div class="kv"><div class="k">Notas</div><div class="v">${c.nt}</div></div></div>`:''}</div>`;});
     fab(false);
+  }else if(bibTab==='docs'){
+    h+=`<label class="upbtn" style="margin-bottom:10px"><input type="file" accept="application/pdf" style="display:none" onchange="subirPDF(this)">📄 Subir PDF</label>`;
+    if(!docs.length)h+=`<div class="empty"><div class="ei">📄</div><p>Sin documentos todavía</p></div>`;
+    docs.forEach(d=>{h+=`<div class="libc"><div class="libn">📄 ${d.nom}</div><div class="libd" style="font-size:0.72rem;color:#aaa">${d.fecha?fdt(d.fecha):''}</div><div style="display:flex;gap:8px;margin-top:8px"><a href="${d.url}" target="_blank" class="btn btn-bl btn-sm">📖 Abrir</a><button class="btn btn-d" onclick="elimDoc('${d.id}')">🗑 Eliminar</button></div></div>`;});
+    fab(true,()=>document.querySelector('input[type=file][accept="application/pdf"]').click());
   }
   document.getElementById('pg-biblioteca').innerHTML=h;
+}
+async function subirPDF(inp){
+  const file=inp.files[0];if(!file)return;
+  toast('⏳ Subiendo PDF...');
+  const url=await window.subirPDFFirebase(file, uid()+'_'+file.name);
+  if(url){
+    if(!window.docs)window.docs=[];
+    docs.push({id:uid(),nom:file.name,url,fecha:new Date().toISOString()});
+    DB.save('hu_docs',docs);
+    if(window.syncToFirebase)window.syncToFirebase();
+    toast('PDF subido ✓');rBib();
+  }
+}
+function elimDoc(id){
+  if(!confirm('¿Eliminar este documento?'))return;
+  docs=docs.filter(d=>d.id!==id);
+  DB.save('hu_docs',docs);
+  if(window.syncToFirebase)window.syncToFirebase();
+  toast('Documento eliminado');rBib();
 }
 function setBib(t){bibTab=t;rBib();}
 function togC(i){cultiIdx=cultiIdx===i?null:i;rBib();}
@@ -776,13 +722,14 @@ function guardarSol(){
 function elimS(id){sols=sols.filter(s=>s.id!==id);saveAll();toast('Fórmula eliminada');rBib();}
 
 // ── FOTOS ──
-function subirPortada(){
+function subirPortada(modo){
   const inp=document.createElement('input');
-  inp.type='file';inp.accept='image/*';inp.capture='environment';
+  inp.type='file';inp.accept='image/*';
+  if(modo==='camara')inp.capture='environment';
   inp.onchange=async e=>{
     const file=e.target.files[0];if(!file)return;
     toast('⏳ Subiendo portada...');
-    const url=await window.subirImgFirebase(file,`portada_${plantaId}`);
+    const url=await window.subirImgFirebase(file,'portada_'+plantaId);
     if(url){
       const idx=plantas.findIndex(x=>x.id===plantaId);
       if(idx>=0){plantas[idx].portada=url;saveAll();rPlantas();toast('Portada actualizada ✓');}
@@ -801,7 +748,7 @@ function subirFotoAlbum(modo){
     const bar=document.getElementById('uppbar');
     if(prog){prog.style.display='block';bar.style.width='30%';}
     toast('⏳ Subiendo foto...');
-    const url=await window.subirImgFirebase(file,`album_${plantaId}_${uid()}`);
+    const url=await window.subirImgFirebase(file,'album_'+plantaId+'_'+uid());
     if(url){
       const idx=plantas.findIndex(x=>x.id===plantaId);
       if(idx>=0){
@@ -839,7 +786,7 @@ render();
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDG3KsEGSJSE_JaGVo7Wvw6VoHGkFhURyE",
@@ -855,7 +802,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const DOC = doc(db, "huerto", "datos");
 
-// Subir imagen a Firebase Storage
+// Subir imagen o PDF a Firebase Storage
 window.subirImgFirebase = async function(file, nombre) {
   try {
     const storageRef = ref(storage, `fotos/${nombre}`);
@@ -863,17 +810,31 @@ window.subirImgFirebase = async function(file, nombre) {
     const url = await getDownloadURL(snap.ref);
     return url;
   } catch(e) {
-    console.error("Error subiendo imagen:", e);
-    toast('⚠️ Error al subir la foto');
+    console.error("Error subiendo archivo:", e);
+    toast('⚠️ Error al subir el archivo');
     return null;
   }
 };
 
-// Subir datos a Firebase
+// Subir PDF a carpeta biblioteca
+window.subirPDFFirebase = async function(file, nombre) {
+  try {
+    const storageRef = ref(storage, `biblioteca/${nombre}`);
+    const snap = await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(snap.ref);
+    return url;
+  } catch(e) {
+    console.error("Error subiendo PDF:", e);
+    toast('⚠️ Error al subir el PDF');
+    return null;
+  }
+};
+
+// Sincronizar datos a Firebase
 window.syncToFirebase = async function() {
   try {
     await setDoc(DOC, {
-      plantas, riegos, tratos, meds, obs, cosechas, sols, avisos,
+      plantas, riegos, tratos, meds, obs, cosechas, sols, avisos, docs,
       updated: new Date().toISOString()
     });
   } catch(e) {
@@ -881,53 +842,57 @@ window.syncToFirebase = async function() {
   }
 };
 
-// Sobreescribir saveAll para que también sincronice
-const _saveAll = window.saveAll || saveAll;
-window.saveAllCloud = function() {
-  _saveAll();
-  window.syncToFirebase();
-};
-
-// Escuchar cambios en tiempo real desde Firebase
+// Escuchar cambios en tiempo real
 onSnapshot(DOC, (snap) => {
   if (!snap.exists()) return;
   const d = snap.data();
   const localTs = localStorage.getItem('hu_updated') || '0';
   if (d.updated && d.updated > localTs) {
-    if (d.plantas)    { plantas   = d.plantas;   DB.save('hu_p', plantas); }
-    if (d.riegos)     { riegos    = d.riegos;    DB.save('hu_r', riegos); }
-    if (d.tratos)     { tratos    = d.tratos;    DB.save('hu_t', tratos); }
-    if (d.meds)       { meds      = d.meds;      DB.save('hu_m', meds); }
-    if (d.obs)        { obs       = d.obs;        DB.save('hu_o', obs); }
-    if (d.cosechas)   { cosechas  = d.cosechas;  DB.save('hu_c', cosechas); }
-    if (d.sols)       { sols      = d.sols;      DB.save('hu_s', sols); }
-    if (d.avisos)     { avisos    = d.avisos;    DB.save('hu_a', avisos); }
+    if (d.plantas)  { plantas   = d.plantas;   DB.save('hu_p', plantas); }
+    if (d.riegos)   { riegos    = d.riegos;    DB.save('hu_r', riegos); }
+    if (d.tratos)   { tratos    = d.tratos;    DB.save('hu_t', tratos); }
+    if (d.meds)     { meds      = d.meds;      DB.save('hu_m', meds); }
+    if (d.obs)      { obs       = d.obs;       DB.save('hu_o', obs); }
+    if (d.cosechas) { cosechas  = d.cosechas;  DB.save('hu_c', cosechas); }
+    if (d.sols)     { sols      = d.sols;      DB.save('hu_s', sols); }
+    if (d.avisos)   { avisos    = d.avisos;    DB.save('hu_a', avisos); }
+    if (d.docs)     { docs      = d.docs;      DB.save('hu_docs', docs); }
     localStorage.setItem('hu_updated', d.updated);
-    btData = null; // Bluetooth nunca persiste entre sesiones
     render();
     const t = document.getElementById('toast');
-    t.textContent = '☁️ Datos sincronizados';
+    t.textContent = '☁️ Sincronizado';
     t.className = 'toast show';
     setTimeout(() => t.className = 'toast', 2000);
   }
 });
 
-// Subir datos locales al arrancar si Firebase está vacío
+// Cargar datos de Firebase al arrancar si localStorage está vacío
 getDoc(DOC).then(snap => {
-  if (!snap.exists() && plantas.length > 0) {
+  if (snap.exists()) {
+    const d = snap.data();
+    const localTs = localStorage.getItem('hu_updated') || '0';
+    if (d.updated && d.updated > localTs) {
+      if (d.plantas)  { plantas   = d.plantas;   DB.save('hu_p', plantas); }
+      if (d.riegos)   { riegos    = d.riegos;    DB.save('hu_r', riegos); }
+      if (d.tratos)   { tratos    = d.tratos;    DB.save('hu_t', tratos); }
+      if (d.meds)     { meds      = d.meds;      DB.save('hu_m', meds); }
+      if (d.obs)      { obs       = d.obs;       DB.save('hu_o', obs); }
+      if (d.cosechas) { cosechas  = d.cosechas;  DB.save('hu_c', cosechas); }
+      if (d.sols)     { sols      = d.sols;      DB.save('hu_s', sols); }
+      if (d.avisos)   { avisos    = d.avisos;    DB.save('hu_a', avisos); }
+      localStorage.setItem('hu_updated', d.updated);
+      render();
+    }
+  } else if (plantas.length > 0) {
     window.syncToFirebase();
   }
 });
 
-// Parchear saveAll global para incluir sync en la nube
-// Redefinir la función saveAll que usa el resto del código
-Object.defineProperty(window, 'saveAll', {
-  get: () => window.saveAllCloud,
-  configurable: true
-});
+// Parchear saveAll para sincronizar automáticamente
+const _saveAll = saveAll;
+window.saveAllCloud = function() { _saveAll(); window.syncToFirebase(); };
+Object.defineProperty(window, 'saveAll', { get: () => window.saveAllCloud, configurable: true });
 
 console.log("✅ Firebase conectado — Mi Huerto Urbano");
 </script>
-
 </body>
-</html>
